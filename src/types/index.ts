@@ -58,3 +58,10 @@ export interface ChatMessageRequest {
 export interface ChatMessageResponse {
   message: string; // Either event_id or text
 }
+
+// Workflow types
+export interface Workflow {
+  event_id: string;
+  workflow_title: string;
+  status?: string;
+}

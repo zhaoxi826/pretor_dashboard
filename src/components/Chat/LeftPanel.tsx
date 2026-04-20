@@ -1,13 +1,20 @@
+import { useState, useEffect } from 'react';
 import { Server, Box, Cpu, HardDrive, List, MessageCircle } from 'lucide-react';
 import { useClusterState } from '../../hooks/useClusterState';
+import apiClient from '../../api/client';
+import type { Workflow } from '../../types';
 
 interface LeftPanelProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  selectedWorkflow: string | null;
+  setSelectedWorkflow: (id: string | null) => void;
 }
 
-export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
+export function LeftPanel({ activeTab, setActiveTab, selectedWorkflow, setSelectedWorkflow }: LeftPanelProps) {
   const { nodes } = useClusterState();
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [loadingWorkflows, setLoadingWorkflows] = useState(false);
 
   const totalNodes = nodes.length;
   const aliveNodes = nodes.filter(n => n.alive).length;
@@ -31,6 +38,33 @@ export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
 
   const cpuPercent = totalCpu > 0 ? (usedCpu / totalCpu) * 100 : 0;
   const memPercent = totalMemory > 0 ? (usedMemory / totalMemory) * 100 : 0;
+
+  useEffect(() => {
+    if (activeTab === 'workflows') {
+      const fetchWorkflows = async () => {
+        setLoadingWorkflows(true);
+        try {
+          const response = await apiClient.get('/api/v1/workflow/list');
+          // Fallback parsing just in case it returns an object or array
+          const data = response.data;
+          let parsedWorkflows: Workflow[] = [];
+          if (Array.isArray(data)) {
+            parsedWorkflows = data;
+          } else if (data && typeof data === 'object') {
+            // Suppose backend sends { workflows: [...] }
+            parsedWorkflows = data.workflows || Object.values(data);
+          }
+          setWorkflows(parsedWorkflows);
+        } catch (error) {
+          console.error("Failed to fetch workflows", error);
+          setWorkflows([]);
+        } finally {
+          setLoadingWorkflows(false);
+        }
+      };
+      fetchWorkflows();
+    }
+  }, [activeTab]);
 
   return (
     <div className="w-72 bg-white border-r border-slate-200 flex flex-col z-0 shrink-0">
@@ -79,38 +113,43 @@ export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex border-b border-slate-100">
           <button
-            onClick={() => setActiveTab('workflows')}
-            className={`flex-1 py-3 text-xs font-medium text-center uppercase tracking-wider transition-colors ${activeTab === 'workflows' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-            <List size={14} className="inline mr-1.5 -mt-0.5" />
-            Workflows
-          </button>
-          <button
             onClick={() => setActiveTab('chats')}
             className={`flex-1 py-3 text-xs font-medium text-center uppercase tracking-wider transition-colors ${activeTab === 'chats' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <MessageCircle size={14} className="inline mr-1.5 -mt-0.5" />
             Chats
           </button>
+          <button
+            onClick={() => setActiveTab('workflows')}
+            className={`flex-1 py-3 text-xs font-medium text-center uppercase tracking-wider transition-colors ${activeTab === 'workflows' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-slate-500 hover:bg-slate-50'}`}
+          >
+            <List size={14} className="inline mr-1.5 -mt-0.5" />
+            Workflows
+          </button>
         </div>
 
         <div className="flex-1 p-4 overflow-y-auto">
           {activeTab === 'workflows' && (
             <div className="space-y-2">
-              <div className="p-3 rounded-lg border border-blue-200 bg-blue-50 shadow-sm cursor-pointer transition-all">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-medium text-sm text-blue-700">Data Processing 1</span>
-                  <span className="flex h-2 w-2 rounded-full bg-green-400"></span>
-                </div>
-                <p className="text-xs text-slate-500 font-mono">ID: flow_x829j_log</p>
-              </div>
-              <div className="p-3 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-slate-50 cursor-pointer transition-all">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-medium text-sm text-slate-700">Model Deployment</span>
-                  <span className="flex h-2 w-2 rounded-full bg-slate-300"></span>
-                </div>
-                <p className="text-xs text-slate-500 font-mono">ID: wf_a1b2c3d4</p>
-              </div>
+              {loadingWorkflows ? (
+                <div className="text-center text-slate-400 text-sm py-4">Loading workflows...</div>
+              ) : workflows.length === 0 ? (
+                <div className="text-center text-slate-400 text-sm py-4">暂无工作流</div>
+              ) : (
+                workflows.map((wf) => (
+                  <div
+                    key={wf.event_id}
+                    onClick={() => setSelectedWorkflow(wf.event_id)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedWorkflow === wf.event_id ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'}`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`font-medium text-sm ${selectedWorkflow === wf.event_id ? 'text-blue-700' : 'text-slate-700'}`}>{wf.workflow_title || 'Unnamed Workflow'}</span>
+                      <span className={`flex h-2 w-2 rounded-full ${wf.status === 'running' ? 'bg-green-400 animate-pulse' : 'bg-slate-300'}`}></span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-mono line-clamp-1">ID: {wf.event_id}</p>
+                  </div>
+                ))
+              )}
             </div>
           )}
           {activeTab === 'chats' && (

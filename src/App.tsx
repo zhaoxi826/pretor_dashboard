@@ -7,9 +7,11 @@ import { ChatPanel } from './components/Chat/ChatPanel';
 import { RightPanel } from './components/Chat/RightPanel';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('workflows'); // For LeftPanel
+  const [activeTab, setActiveTab] = useState('chats'); // For LeftPanel
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'settings', or 'monitoring'
   const [settingsTab, setSettingsTab] = useState('users'); // For SettingsLayout
+
+  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
 
   return (
     <div className="flex h-screen w-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
@@ -23,13 +25,18 @@ function App() {
       ) : currentView === 'dashboard' ? (
         <>
           {/* 2. Left Panel - Cluster Status & Workflows/Chats */}
-          <LeftPanel activeTab={activeTab} setActiveTab={setActiveTab} />
+          <LeftPanel
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedWorkflow={selectedWorkflow}
+            setSelectedWorkflow={setSelectedWorkflow}
+          />
 
           {/* 3. Middle Panel - AI Chat */}
           <ChatPanel />
 
           {/* 4. Right Panel - Workflow Execution Status (Only show when viewing workflows) */}
-          {activeTab === 'workflows' && <RightPanel />}
+          {activeTab === 'workflows' && <RightPanel selectedWorkflow={selectedWorkflow} />}
         </>
       ) : (
         /* Settings View */
