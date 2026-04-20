@@ -1,12 +1,10 @@
 import { useState } from 'react';
-
 import { Sidebar } from './components/Layout/Sidebar';
-import { MonitoringDashboard } from './components/Monitoring/MonitoringDashboard';
+import { MonitoringLayout } from './components/Monitoring/MonitoringLayout';
 import { SettingsLayout } from './components/Settings/SettingsLayout';
 import { LeftPanel } from './components/Chat/LeftPanel';
 import { ChatPanel } from './components/Chat/ChatPanel';
 import { RightPanel } from './components/Chat/RightPanel';
-
 
 function App() {
   const [activeTab, setActiveTab] = useState('workflows'); // For LeftPanel
@@ -21,7 +19,7 @@ function App() {
 
       {/* Main Content Area depending on view */}
       {currentView === 'monitoring' ? (
-        <MonitoringDashboard />
+        <MonitoringLayout />
       ) : currentView === 'dashboard' ? (
         <>
           {/* 2. Left Panel - Cluster Status & Workflows/Chats */}
