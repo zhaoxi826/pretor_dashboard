@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-import { MessageSquare, Activity, Terminal, ChevronRight } from 'lucide-react';
+import { MessageSquare, Activity, Terminal, ChevronRight, Plus } from 'lucide-react';
 import apiClient from '../../api/client';
 
 interface ChatMessage {
@@ -125,18 +124,24 @@ export function ChatPanel() {
       {/* Chat Input */}
       <div className="p-4 bg-white border-t border-slate-200">
         <div className="relative flex items-center">
+          <button
+            className="absolute left-2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors z-10 cursor-pointer"
+            title="Add attachment"
+          >
+            <Plus size={20} />
+          </button>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             placeholder="Ask Pretor to do something..."
-            className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl pl-4 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-inner"
+            className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl pl-12 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-inner"
           />
           <button
             onClick={handleSendMessage}
             disabled={loading || !input.trim()}
-            className="absolute right-2 p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+            className="absolute right-2 p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
           >
             <ChevronRight size={18} />
           </button>

@@ -1,5 +1,5 @@
-
 import { Server, Box, Cpu, HardDrive, List, MessageCircle } from 'lucide-react';
+import { useClusterState } from '../../hooks/useClusterState';
 
 interface LeftPanelProps {
   activeTab: string;
@@ -7,6 +7,31 @@ interface LeftPanelProps {
 }
 
 export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
+  const { nodes } = useClusterState();
+
+  const totalNodes = nodes.length;
+  const aliveNodes = nodes.filter(n => n.alive).length;
+
+  let totalCpu = 0;
+  let usedCpu = 0;
+  let totalMemory = 0;
+  let usedMemory = 0;
+
+  nodes.forEach(node => {
+    const nodeTotalCpu = node.resources?.CPU || 0;
+    const nodeRemainingCpu = node.remaining?.CPU || 0;
+    totalCpu += nodeTotalCpu;
+    usedCpu += (nodeTotalCpu - nodeRemainingCpu);
+
+    const nodeTotalMem = node.resources?.memory || 0;
+    const nodeRemainingMem = node.remaining?.memory || 0;
+    totalMemory += nodeTotalMem;
+    usedMemory += (nodeTotalMem - nodeRemainingMem);
+  });
+
+  const cpuPercent = totalCpu > 0 ? (usedCpu / totalCpu) * 100 : 0;
+  const memPercent = totalMemory > 0 ? (usedMemory / totalMemory) * 100 : 0;
+
   return (
     <div className="w-72 bg-white border-r border-slate-200 flex flex-col z-0 shrink-0">
       {/* Top: Cluster Status */}
@@ -21,7 +46,7 @@ export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
               <Box size={16} className="mr-2 text-blue-500" />
               <span className="text-sm">Active Nodes</span>
             </div>
-            <span className="text-sm font-medium text-slate-800">3 / 4</span>
+            <span className="text-sm font-medium text-slate-800">{aliveNodes} / {totalNodes || 0}</span>
           </div>
 
           <div className="flex items-center justify-between">
@@ -29,10 +54,10 @@ export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
               <Cpu size={16} className="mr-2 text-indigo-500" />
               <span className="text-sm">Cluster CPU</span>
             </div>
-            <span className="text-sm font-medium text-slate-800">45%</span>
+            <span className="text-sm font-medium text-slate-800">{cpuPercent.toFixed(1)}%</span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5">
-            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: '45%' }}></div>
+            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${cpuPercent}%` }}></div>
           </div>
 
           <div className="flex items-center justify-between">
@@ -40,10 +65,12 @@ export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
               <HardDrive size={16} className="mr-2 text-green-500" />
               <span className="text-sm">Cluster RAM</span>
             </div>
-            <span className="text-sm font-medium text-slate-800">12.4 GB</span>
+            <span className="text-sm font-medium text-slate-800">
+               {(totalMemory > 0 ? usedMemory / (1024 ** 3) : 0).toFixed(1)} GB
+            </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5">
-            <div className="bg-green-500 h-1.5 rounded-full" style={{ width: '60%' }}></div>
+            <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${memPercent}%` }}></div>
           </div>
         </div>
       </div>
@@ -70,15 +97,20 @@ export function LeftPanel({ activeTab, setActiveTab }: LeftPanelProps) {
         <div className="flex-1 p-4 overflow-y-auto">
           {activeTab === 'workflows' && (
             <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className={`p-3 rounded-lg border cursor-pointer transition-all ${i === 1 ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'}`}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className={`font-medium text-sm ${i === 1 ? 'text-blue-700' : 'text-slate-700'}`}>Data Processing {i}</span>
-                    <span className={`flex h-2 w-2 rounded-full ${i === 1 ? 'bg-green-400' : 'bg-slate-300'}`}></span>
-                  </div>
-                  <p className="text-xs text-slate-400 line-clamp-1">Processing raw user logs...</p>
+              <div className="p-3 rounded-lg border border-blue-200 bg-blue-50 shadow-sm cursor-pointer transition-all">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-medium text-sm text-blue-700">Data Processing 1</span>
+                  <span className="flex h-2 w-2 rounded-full bg-green-400"></span>
                 </div>
-              ))}
+                <p className="text-xs text-slate-500 font-mono">ID: flow_x829j_log</p>
+              </div>
+              <div className="p-3 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-slate-50 cursor-pointer transition-all">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-medium text-sm text-slate-700">Model Deployment</span>
+                  <span className="flex h-2 w-2 rounded-full bg-slate-300"></span>
+                </div>
+                <p className="text-xs text-slate-500 font-mono">ID: wf_a1b2c3d4</p>
+              </div>
             </div>
           )}
           {activeTab === 'chats' && (
