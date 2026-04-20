@@ -28,8 +28,8 @@ function App() {
           {/* 3. Middle Panel - AI Chat */}
           <ChatPanel />
 
-          {/* 4. Right Panel - Workflow Execution Status */}
-          <RightPanel />
+          {/* 4. Right Panel - Workflow Execution Status (Only show when viewing workflows) */}
+          {activeTab === 'workflows' && <RightPanel />}
         </>
       ) : (
         /* Settings View */
